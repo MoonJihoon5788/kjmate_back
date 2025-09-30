@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +18,11 @@ public class JwtUtil {
     private String secretKey;
 
     @Value("${jwt.access-token-expiration}")
-    private String accessTokenExpiration;
+    private long accessTokenExpiration;
 
+    @Getter
     @Value("${jwt.refresh-token-expiration}")
-    private String refreshTokenExpiration;
+    private long refreshTokenExpiration;
 
     // secretKey 생성
     private SecretKey getSecretKey() {
@@ -28,7 +30,7 @@ public class JwtUtil {
     }
 
     // access token 생성
-    public String getAccessToken(String email, Long memberId, Character nationality) {
+    public String generateAccessToken(String email, Long memberId, Character nationality) {
         return Jwts.builder()
                 .subject(email)
                 .claim("memberId",memberId)
@@ -40,7 +42,7 @@ public class JwtUtil {
     }
     
     //refresh token 생성
-    public String getRefreshToken(String email) {
+    public String generateRefreshToken(String email) {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
@@ -83,4 +85,5 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
 }

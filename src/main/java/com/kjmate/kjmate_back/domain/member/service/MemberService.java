@@ -1,9 +1,12 @@
 package com.kjmate.kjmate_back.domain.member.service;
 
+import com.kjmate.kjmate_back.domain.member.dto.LoginRequestDto;
+import com.kjmate.kjmate_back.domain.member.dto.LoginResponseDto;
 import com.kjmate.kjmate_back.domain.member.dto.MemberJoinDto;
 import com.kjmate.kjmate_back.domain.member.dto.MemberResponse;
 import com.kjmate.kjmate_back.domain.member.entity.Member;
 import com.kjmate.kjmate_back.domain.member.repository.MemberRepository;
+import com.kjmate.kjmate_back.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +22,10 @@ import java.time.LocalDateTime;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RedisService redisService;
+    private final JwtUtil jwtUtil;
 
+    //회원가입
     public MemberResponse signUp(MemberJoinDto memberJoinDto) {
         if (memberRepository.existsByEmail(memberJoinDto.getEmail())) {
             throw new IllegalArgumentException("중복된 이메일 입니다.");
@@ -40,5 +46,33 @@ public class MemberService {
                 .build();
         memberRepository.save(member);
         return MemberResponse.from(member);
+    }
+
+    // 로그인
+    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
+        Member member = memberRepository.findByEmail(loginRequestDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일 입니다."));
+
+        if (!passwordEncoder.matches(loginRequestDto.getPassword(), member.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치 하지 않습니다.");
+        }
+
+        // 기존 리프레쉬 토큰 지우기
+        redisService.deleteRefreshToken(member.getEmail());
+
+        // accessToken 및 refreshToken 토큰 생성
+        String accessToken = jwtUtil.generateAccessToken(member.getEmail(), member.getId(), member.getNationality());
+        String refreshToken = jwtUtil.generateRefreshToken(member.getEmail());
+
+        // 레디스에 리프레쉬 토큰 저장
+        redisService.saveRefreshToken(member.getEmail(), refreshToken, jwtUtil.getRefreshTokenExpiration());
+
+        return LoginResponseDto.builder().
+                accessToken(accessToken).
+                refreshToken(refreshToken).
+                email(member.getEmail()).
+                memberId(member.getId()).
+                nickname(member.getNickname()).
+                build();
     }
 }
