@@ -77,6 +77,12 @@ public class JwtUtil {
         }
     }
 
+    // Access Token 만료 시간 가져오기
+    public long getExpirationTime(String token) {
+        Date expiration = getClaims(token).getExpiration();
+        return expiration.getTime() - System.currentTimeMillis();
+    }
+
     // claims 추출
     public Claims getClaims(String token) {
         return Jwts.parser()

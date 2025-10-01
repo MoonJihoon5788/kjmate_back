@@ -1,9 +1,6 @@
 package com.kjmate.kjmate_back.domain.member.service;
 
-import com.kjmate.kjmate_back.domain.member.dto.LoginRequestDto;
-import com.kjmate.kjmate_back.domain.member.dto.LoginResponseDto;
-import com.kjmate.kjmate_back.domain.member.dto.MemberJoinDto;
-import com.kjmate.kjmate_back.domain.member.dto.MemberResponse;
+import com.kjmate.kjmate_back.domain.member.dto.*;
 import com.kjmate.kjmate_back.domain.member.entity.Member;
 import com.kjmate.kjmate_back.domain.member.repository.MemberRepository;
 import com.kjmate.kjmate_back.util.JwtUtil;
@@ -73,6 +70,45 @@ public class MemberService {
                 email(member.getEmail()).
                 memberId(member.getId()).
                 nickname(member.getNickname()).
+                build();
+    }
+
+    // 로그아웃
+    public void logout(String email, String accessToken) {
+        redisService.deleteRefreshToken(email);
+
+        long expirationTime = jwtUtil.getExpirationTime(accessToken);
+        if (expirationTime > 0){
+            redisService.addBlackList(accessToken, expirationTime);
+        }
+        log.info("로그아웃 성공:{}" , email);
+    }
+
+    // 갱신
+    public TokenResponseDto refreshAccessToken(String refreshToken) {
+        // 유효성 검사
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        // refresh Token 이메일 추출
+        String email = jwtUtil.getEmailFromToken(refreshToken);
+
+        // Redis에 저장된 Refresh Token과 비교
+        String storedRefreshToken = redisService.getRefreshToken(email);
+        if (storedRefreshToken == null || !refreshToken.equals(storedRefreshToken)) {
+            throw new IllegalArgumentException("리프레시 토큰이 일치하지 않습니다.");
+        }
+        
+        // 회원 조회
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("리프레시 토큰이 일치하지 않습니다."));
+
+        String accessToken = jwtUtil.generateAccessToken(email, member.getId(), member.getNationality());
+        log.info("Access Token 갱신 성공: {}", email);
+
+        return TokenResponseDto.builder().
+                accessToken(accessToken).
                 build();
     }
 }
