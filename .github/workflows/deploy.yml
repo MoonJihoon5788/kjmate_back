@@ -36,6 +36,10 @@ jobs:
           chmod 600 ~/.ssh/ec2_key.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
+      - name: Create .env file from Secret
+        run: |
+          echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
+          
       # 6️⃣ 프로젝트 파일들을 EC2로 배포
       - name: Deploy files to EC2
         run: |
