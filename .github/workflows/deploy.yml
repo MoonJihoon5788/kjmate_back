@@ -73,7 +73,7 @@ jobs:
           
             # 헬스 체크
             echo 'Waiting for application to start...'
-            sleep 15
+            sleep 45
           
             if docker ps | grep -q 'kjmate-backend.*Up'; then
               echo 'Deployment successful! Application is running.'
