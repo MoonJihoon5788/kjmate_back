@@ -39,13 +39,16 @@ jobs:
 
       # 5.5️⃣ .env 파일을 Secret에서 생성 (✨수정된 스텝✨)
       # tee 명령어를 사용하여 내용 앞뒤에 불필요한 공백/따옴표가 들어가는 것을 방지합니다.
-      - name: Create .env file from Secret
+      - name: Create .env file
         run: |
-          echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          cat <<EOF > .env
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+      
 
       # 6️⃣ 프로젝트 파일들을 EC2로 배포 (생략)
       - name: Deploy files to EC2
