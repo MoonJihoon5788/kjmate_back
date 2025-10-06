@@ -4,15 +4,12 @@ services:
   mysql:
     image: mysql:8.0
     container_name: kjmate-mysql
-    # .env 파일에서 변수 로드
     env_file:
       - .env
     environment:
-      # DB 초기 설정 및 루트 비밀번호
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      # 🌟 백엔드 앱이 접속할 일반 계정 설정 (현재는 root 사용) 🌟
-      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
@@ -39,12 +36,11 @@ services:
     container_name: kjmate-backend
     ports:
       - "8080:8080"
-    # .env 파일에서 변수 로드
     env_file:
       - .env
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
