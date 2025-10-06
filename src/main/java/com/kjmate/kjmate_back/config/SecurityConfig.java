@@ -38,6 +38,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 URL
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/members", "/api/members/login").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         // 나머지는 인증 필요
