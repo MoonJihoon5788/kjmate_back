@@ -28,6 +28,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = extractTokenFromRequest(request);
+
+        String path = request.getRequestURI();
+        // actuator 경로는 JWT 검증 건너뛰기
+        if (path.startsWith("/actuator")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         if (token != null) {
             //블랙 리스트 확인
             if(redisService.isBlackList(token)) {
