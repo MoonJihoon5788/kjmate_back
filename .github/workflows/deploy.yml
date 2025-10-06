@@ -9,26 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 코드 체크아웃
+      # 1️⃣ 코드 체크아웃 (생략)
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Java 21 설정 (프로젝트가 Java 21 사용)
+      # 2️⃣ Java 21 설정 (생략)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # 3️⃣ Gradle 권한 설정
+      # 3️⃣ Gradle 권한 설정 (생략)
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4️⃣ 빌드 JAR
+      # 4️⃣ 빌드 JAR (생략)
       - name: Build JAR
         run: ./gradlew clean build -x test
 
-      # 5️⃣ SSH 키 준비
+      # 5️⃣ SSH 키 준비 (생략)
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
@@ -36,11 +36,14 @@ jobs:
           chmod 600 ~/.ssh/ec2_key.pem
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
+
+      # 5.5️⃣ .env 파일을 Secret에서 생성 (✨수정된 스텝✨)
+      # tee 명령어를 사용하여 내용 앞뒤에 불필요한 공백/따옴표가 들어가는 것을 방지합니다.
       - name: Create .env file from Secret
         run: |
-          echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
-          
-      # 6️⃣ 프로젝트 파일들을 EC2로 배포
+          echo "${{ secrets.ENV_FILE_CONTENT }}" | tee .env
+
+      # 6️⃣ 프로젝트 파일들을 EC2로 배포 (생략)
       - name: Deploy files to EC2
         run: |
           ssh -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "mkdir -p /home/ubuntu/nginx-app"
@@ -49,11 +52,16 @@ jobs:
           scp -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/nginx-app/
           scp -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no .env ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/nginx-app/
 
-      # 7️⃣ Docker Compose로 재배포
+      # 7️⃣ Docker Compose로 재배포 (✨수정된 스텝✨)
       - name: Deploy with Docker Compose
         run: |
           ssh -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "
             cd /home/ubuntu/nginx-app
+          
+            # 💡 디버깅: EC2 서버에 복사된 .env 파일 내용 확인
+            echo '--- DEBUG: Displaying .env content on EC2 ---'
+            cat .env
+            echo '--- END DEBUG ---'
           
             # 기존 컨테이너 중지
             docker compose down
@@ -78,7 +86,7 @@ jobs:
             fi
           "
 
-      # 8️⃣ 정리
+      # 8️⃣ 정리 (생략)
       - name: Cleanup
         if: always()
         run: rm -f ~/.ssh/ec2_key.pem
