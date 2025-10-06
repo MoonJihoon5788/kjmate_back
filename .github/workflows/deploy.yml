@@ -37,20 +37,12 @@ jobs:
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
 
-      # 5.5️⃣ .env 파일을 Secret에서 생성 (✨수정된 스텝✨)
-      # tee 명령어를 사용하여 내용 앞뒤에 불필요한 공백/따옴표가 들어가는 것을 방지합니다.
+      # 5.5️⃣ .env 파일을 Secret에서 생성
       - name: Create .env file
         run: |
-          cat <<EOF > .env
-          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER=${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          EOF
-      
+          echo '${{ secrets.ENV_FILE_CONTENT }}' > .env
 
-      # 6️⃣ 프로젝트 파일들을 EC2로 배포 (생략)
+      # 6️⃣ 프로젝트 파일들을 EC2로 배포
       - name: Deploy files to EC2
         run: |
           ssh -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "mkdir -p /home/ubuntu/nginx-app"
@@ -58,7 +50,7 @@ jobs:
           scp -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no Dockerfile ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/nginx-app/
           scp -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/nginx-app/
           scp -i ~/.ssh/ec2_key.pem -o StrictHostKeyChecking=no .env ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/nginx-app/
-
+          
       # 7️⃣ Docker Compose로 재배포 (✨수정된 스텝✨)
       - name: Deploy with Docker Compose
         run: |
